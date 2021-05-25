@@ -1,0 +1,44 @@
+<script>
+  import mpx, { createApp } from '@mpxjs/core'
+  import apiProxy from '@mpxjs/api-proxy'
+
+  mpx.use(apiProxy, { usePromise: true })
+
+  createApp({
+    onLaunch () {
+      wx.cloud.init({
+        env: 'artiiicle-0g6tol773350b53b',
+      })
+    },
+  })
+</script>
+
+<style>
+  /*此处编写全局样式*/
+</style>
+
+<script type="application/json">
+  {
+    "pages": [
+      "./pages/index",
+      "./pages/editor",
+      "./pages/detail"
+    ]
+  }
+</script>
+
+<!--也可以通过以下形式用js输出json，便于书写注释和使用条件编译-->
+
+<!--<script name="json">-->
+<!--  module.exports = {-->
+<!--    pages: [-->
+<!--      './pages/index'-->
+<!--    ],-->
+<!--    plugins: {-->
+<!--      'myPlugin': {-->
+<!--        'version': 'dev',-->
+<!--        'provider': 'touristappid'-->
+<!--      }-->
+<!--    }-->
+<!--  }-->
+<!--</script>-->

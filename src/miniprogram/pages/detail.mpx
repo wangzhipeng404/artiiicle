@@ -1,0 +1,46 @@
+<template minapp='mpx' xlang='wxml'>
+  <view class="container">
+    <view class="header">
+      <van-cell-group>
+        <van-cell title="{{article.title}}" label="{{article.tagStr}}"/>
+      </van-cell-group>
+    </view>
+    <view class="content">
+      <rich-text nodes="{{article.content}}" />
+    </view>
+    <view class="add-btn">
+      <navigator url="/pages/editor">
+        <van-icon name="edit" />
+      </navigator>
+    </view>
+  </view>
+</template>
+<script>
+  import { createPage } from '@mpxjs/core'
+  import store from '../store/store'
+
+  createPage({
+    computed: store.mapState(['article']),
+  })
+</script>
+<style lang="stylus" scoped>
+.container
+  .content
+    padding 15px
+    padding-bottom  50px
+  .add-btn
+    position fixed
+    right 10px
+    bottom 0px
+    font-size 48px
+    color #4fc08d
+</style>
+<script type='application/json'>
+  {
+    "usingComponents": {
+      "van-cell": "@vant/weapp/cell/index",
+      "van-cell-group": "@vant/weapp/cell-group/index",
+      "van-icon": "@vant/weapp/icon/index"
+    }
+  }
+</script>

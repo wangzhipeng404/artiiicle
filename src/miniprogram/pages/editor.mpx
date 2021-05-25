@@ -1,0 +1,208 @@
+<template minapp='mpx' xlang='wxml'>
+  <view class='container'>
+    <view class="title">
+      <van-field
+        label="标题"
+        placeholder="请输入标题"
+        wx:model="{{ title }}"
+        wx:model-event="input"
+        wx:model-value-path="[]"
+        border="{{ false }}"
+      />
+    </view>
+    <view class="tags-wrap">
+      <van-cell-group>
+        <van-field
+          wx:model="{{ tag }}"
+          wx:model-event="input"
+          wx:model-value-path="[]"
+          center
+          clearable
+          label="标签"
+          placeholder="请输入标签"
+          border="{{ false }}"
+          use-button-slot
+        >
+          <van-button slot="button" size="small" type="primary" bindclick="addTag">
+            添加
+          </van-button>
+        </van-field>
+      </van-cell-group>
+      <view class="tags-content">
+        <view class="tag" wx:for="{{ tags }}" wx:key="item">
+          <van-tag
+            closeable
+            size="medium"
+            type="success"
+            bindclose="removeTag(index)"
+          >
+            {{item}}
+          </van-tag>
+        </view>
+      </view>
+    </view>
+    <view class="editor-wrap">
+      <van-cell-group>
+        <van-cell title="正文" />
+      </van-cell-group>
+      <hf-editor 
+        bind:Content="getHtml"
+        option="{{option}}"
+        bind:insertImage="insertImage"
+        id="hf_editor"
+        wx:ref="editor"
+        bind:ready="editorReady"
+      />
+    </view>
+    <view class="btn-wrap">
+      <van-button 
+        type="primary"
+        block
+        loading={{loading}}
+        loading-text="正在保存..."
+        bindclick="submit"
+      >
+        提交
+      </van-button>
+    </view>
+  </view>
+</template>
+
+<script>
+import mpx, { createPage } from '@mpxjs/core'
+import { add, get, update } from '../services/article'
+import store from '../store/store'
+createPage({
+  data: {
+    title: '',
+    tags: [],
+    tag: '',
+    html: '',
+    option: {
+      placeholder: '编写...', // 占位符默认为 '请输入文字...'
+      imgUp: false, // 插入图片功能默认开启
+      width: '100%', // 默认宽100%
+      height: '800rpx', // 默认高200px
+    },
+    loading: false,
+    uid: null,
+  },
+  onLoad (options) {
+    const { article } = store.state
+    if (article._id) {
+      this.uid = article._id
+      this.title = article.title
+      this.tags = article.tags
+      this.html = article.content
+    }
+  },
+  methods: {
+    editorReady (e) {
+      e.detail.instance.setContent(this.html)
+    },
+    addTag () {
+      this.tags.push(this.tag)
+      this.tag = ''
+    },
+    removeTag (index) {
+      this.tags.splice(index, 1)
+    },
+    getHtml (e) { // 从组件获取值
+      this.html = e.detail.content.html
+    },
+    submit () {
+      if (this.loading) return
+      if (!this.title) {
+        mpx.showToast({
+          title: '请输入标题', // 提示的内容,
+          icon: 'error', // 图标,
+          duration: 2000, // 延迟时间,
+          mask: true, // 显示透明蒙层，防止触摸穿透,
+          success: res => {},
+        })
+        return
+      }
+      if (!this.html) {
+        mpx.showToast({
+          title: '请输入内容', // 提示的内容,
+          icon: 'error', // 图标,
+          duration: 2000, // 延迟时间,
+          mask: true, // 显示透明蒙层，防止触摸穿透,
+          success: res => {},
+        })
+        return
+      }
+      this.loading = true
+      const data = {
+        title: this.title,
+        tags: this.tags,
+        content: this.html,
+      }
+      if (this.uid) {
+        update(this.uid, data).then(res => {
+          store.commit('keepArticle', {})
+          mpx.navigateTo({ url: '/pages/index' })
+        }).catch(() => {
+          this.loading = false
+        })
+      } else {
+        add(data).then(res => {
+          mpx.navigateTo({ url: '/pages/index' })
+        }).catch(() => {
+          this.loading = false
+        })
+      }
+    },
+    insertImage () { // 图片上传插入示例
+      wx.chooseImage({
+        count: 1,
+        success: res => {
+          console.log(res)
+          if (res.errMsg !== 'chooseImage:ok') return
+          const arr = res.tempFilePaths[0].split('/')
+          wx.cloud.uploadFile({
+            cloudPath: arr[arr.length - 1], // 上传至云端的路径
+            filePath: res.tempFilePaths[0], // 小程序临时文件路径
+            success: res => {
+              // 返回文件 ID
+              console.log(res.fileID)
+              this.selectComponent('#hf_editor').insertSrc(res.fileID)
+            },
+            fail: res => console.error(res),
+          })
+        },
+      })
+    },
+  },
+})
+</script>
+
+<style lang='stylus' scoped>
+.container
+  .tags-wrap
+    .tags-content
+      display flex
+      flex-wrap wrap
+      padding: 8px 15px
+      .tag
+        padding 2px 5px
+  .btn-wrap
+    position fixed
+    bottom 0
+    left 0
+    z-index 99
+    width 100%
+</style>
+
+<script type='application/json'>
+  {
+    "usingComponents": {
+      "van-field": "@vant/weapp/field/index",
+      "van-cell": "@vant/weapp/cell/index",
+      "van-cell-group": "@vant/weapp/cell-group/index",
+      "van-button": "@vant/weapp/button/index",
+      "van-tag": "@vant/weapp/tag/index",
+      "hf-editor": "../component/editor/editor"
+    }
+  }
+</script>

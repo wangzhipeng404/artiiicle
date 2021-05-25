@@ -1,0 +1,117 @@
+<template>
+  <view>
+    <view class="nav-wrap">
+      <van-search
+        wx:model="{{ keyword }}"
+        wx:model-event="change"
+        wx:model-value-path="[]"
+        placeholder="请输入搜索关键词"
+        shape="round"
+        input-align="center"
+        background="#4fc08d"
+        bindsearch="onSearch"
+      />
+    </view>
+    <view list-wrap>
+      <view >
+        <van-cell-group>
+          <van-cell 
+            wx:for="{{list}}"
+            wx:key="_id"
+            title="{{item.title}}"
+            is-link
+            bindclick="toDetail(item)"
+            label="{{item.tagStr}}"
+          />
+        </van-cell-group>
+      </view>
+      <view class="loading-wrap" wx:if="{{loading}}">
+        <van-loading size="16px" color="#1989fa">加载中...</van-loading>
+      </view>
+      <view class="finish-wrap" wx:if="{{finished}}">
+        没有了
+      </view>
+    </view>
+    <view class="add-btn">
+      <navigator url="/pages/editor">
+        <van-icon name="add-o" />
+      </navigator>
+    </view>
+  </view>
+</template>
+
+<script>
+  import mpx, { createPage } from '@mpxjs/core'
+  import { find } from '../services/article'
+  import store from '../store/store'
+
+  createPage({
+    data: {
+      keyword: '',
+      page: 1,
+      limit: 10,
+      list: [],
+      loading: false,
+      finished: false,
+    },
+    onLoad () {
+      this.loadData()
+    },
+    methods: {
+      toDetail (item) {
+        store.commit('keepArticle', item)
+        mpx.navigateTo({ url: '/pages/detail' })
+      },
+      onSearch () {
+        this.page = 1
+        this.finished = false
+        this.list = []
+        this.loadData()
+      },
+      loadData () {
+        if (this.finished) return
+        if (this.loading) return
+        this.loading = true
+        find({
+          keyword: this.keyword,
+          page: this.page,
+          limit: this.limit,
+        }).then(data => {
+          this.list = this.list.concat(data.map(d => ({ ...d, tagStr: d.tags.join('，') })))
+          this.loading = false
+          if (data.length < this.limit) {
+            this.finished = true
+          }
+        })
+      },
+    },
+  })
+</script>
+<style lang="stylus" scoped>
+.add-btn
+  position fixed
+  right 10px
+  bottom 0px
+  font-size 48px
+  color #4fc08d
+.loading-wrap
+  display flex
+  justify-content center
+  padding: 10px 0
+.finish-wrap
+  padding: 10px 0
+  text-align center
+  color #bfbfbf
+  font-size 14px
+</style>
+<script type="application/json">
+  {
+    "usingComponents": {
+      "van-cell": "@vant/weapp/cell/index",
+      "van-cell-group": "@vant/weapp/cell-group/index",
+      "van-search": "@vant/weapp/search/index",
+      "van-icon": "@vant/weapp/icon/index",
+      "van-loading": "@vant/weapp/loading/index"
+    }
+  }
+</script>
