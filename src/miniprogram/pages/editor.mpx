@@ -1,5 +1,24 @@
 <template minapp='mpx' xlang='wxml'>
   <view class='container'>
+    <van-nav-bar
+      title="编辑"
+      left-text="返回"
+      right-text="发布"
+      left-arrow
+      bind:click-left="goback"
+      bind:click-right="submit"
+      custom-class="navvv"
+      custom-style="padding-top: 0;"
+    >
+      <van-button 
+        type="primary"
+        size="small"
+        loading={{loading}}
+        slot="right"
+      >
+        提交
+      </van-button>
+    </van-nav-bar>
     <view class="title">
       <van-field
         label="标题"
@@ -54,17 +73,6 @@
         bind:ready="editorReady"
       />
     </view>
-    <view class="btn-wrap">
-      <van-button 
-        type="primary"
-        block
-        loading={{loading}}
-        loading-text="正在保存..."
-        bindclick="submit"
-      >
-        提交
-      </van-button>
-    </view>
   </view>
 </template>
 
@@ -82,12 +90,14 @@ createPage({
       placeholder: '编写...', // 占位符默认为 '请输入文字...'
       imgUp: false, // 插入图片功能默认开启
       width: '100%', // 默认宽100%
-      height: '800rpx', // 默认高200px
+      height: '200rpx', // 默认高200px
     },
     loading: false,
     uid: null,
   },
   onLoad (options) {
+    const height = wx.getSystemInfoSync().windowHeight
+    this.option.height = `${height - 315}px`
     const { article } = store.state
     if (article._id) {
       this.uid = article._id
@@ -97,6 +107,9 @@ createPage({
     }
   },
   methods: {
+    goback () {
+      mpx.navigateBack()
+    },
     editorReady (e) {
       e.detail.instance.setContent(this.html)
     },
@@ -155,21 +168,41 @@ createPage({
     },
     insertImage () { // 图片上传插入示例
       wx.chooseImage({
-        count: 1,
+        count: 9,
         success: res => {
           console.log(res)
           if (res.errMsg !== 'chooseImage:ok') return
-          const arr = res.tempFilePaths[0].split('/')
-          wx.cloud.uploadFile({
-            cloudPath: arr[arr.length - 1], // 上传至云端的路径
-            filePath: res.tempFilePaths[0], // 小程序临时文件路径
-            success: res => {
-              // 返回文件 ID
-              console.log(res.fileID)
-              this.selectComponent('#hf_editor').insertSrc(res.fileID)
-            },
-            fail: res => console.error(res),
-          })
+          const files = res.tempFilePaths
+          let count = files.length
+          const imgs = []
+          for (let i = 0; i < files.length; i++) {
+            const arr = files[i].split('/')
+            wx.cloud.uploadFile({
+              cloudPath: arr[arr.length - 1], // 上传至云端的路径
+              filePath: files[i], // 小程序临时文件路径
+              success: res => {
+                // 返回文件 ID
+                imgs[i] = res.fileID
+                count--
+                if (count === 0) {
+                  const $editor = this.selectComponent('#hf_editor')
+                  imgs.forEach(img => {
+                    $editor.insertSrc(img)
+                  })
+                }
+              },
+              fail: res => {
+                imgs[i] = ''
+                count--
+                if (count === 0) {
+                  const $editor = this.selectComponent('#hf_editor')
+                  imgs.forEach(img => {
+                    $editor.insertSrc(img)
+                  })
+                }
+              },
+            })
+          }
         },
       })
     },
@@ -179,6 +212,14 @@ createPage({
 
 <style lang='stylus' scoped>
 .container
+  box-sizing border-box
+  padding-top 46px
+  .navvv
+    position fixed
+    top 0
+    left 0
+    width 100%
+    padding-top 0
   .tags-wrap
     .tags-content
       display flex
@@ -202,6 +243,7 @@ createPage({
       "van-cell-group": "@vant/weapp/cell-group/index",
       "van-button": "@vant/weapp/button/index",
       "van-tag": "@vant/weapp/tag/index",
+      "van-nav-bar": "@vant/weapp/nav-bar/index",
       "hf-editor": "../component/editor/editor"
     }
   }

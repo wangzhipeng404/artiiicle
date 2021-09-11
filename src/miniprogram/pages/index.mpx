@@ -15,14 +15,25 @@
     <view list-wrap>
       <view >
         <van-cell-group>
-          <van-cell 
+          <van-swipe-cell
+            right-width="{{ 65 }}"
             wx:for="{{list}}"
             wx:key="_id"
-            title="{{item.title}}"
-            is-link
-            bindclick="toDetail(item)"
-            label="{{item.tagStr}}"
-          />
+            bindclick="onDelete(item._id, $event)"
+          >
+            <van-cell 
+              title="{{item.title}}"
+              is-link
+              catchtap="toDetail(item)"
+              label="{{item.tagStr}}"
+            />
+             <view 
+              slot="right"
+              class="van-swipe-cell__right cell-del"
+            >
+              删除
+            </view>
+          </van-swipe-cell>
         </van-cell-group>
       </view>
       <view class="loading-wrap" wx:if="{{loading}}">
@@ -33,28 +44,40 @@
       </view>
     </view>
     <view class="add-btn">
-      <navigator url="/pages/editor">
-        <van-icon name="add-o" />
-      </navigator>
+        <van-icon name="add-o" bindclick="toEditor"/>
     </view>
+    <van-dialog id="van-dialog" />
   </view>
 </template>
 
 <script>
   import mpx, { createPage } from '@mpxjs/core'
-  import { find } from '../services/article'
+  import { find, remove } from '../services/article'
   import store from '../store/store'
+  import Dialog from '@vant/weapp/dist/dialog/dialog'
 
   createPage({
     data: {
       keyword: '',
       page: 1,
-      limit: 10,
+      limit: 20,
       list: [],
       loading: false,
       finished: false,
+      deleting: false,
     },
     onLoad () {
+      this.loadData()
+    },
+    onPullDownRefresh () {
+      this.page = 1
+      this.list = []
+      this.finished = false
+      this.loadData()
+    },
+    onReachBottom () {
+      if (this.finished) return
+      this.page += 1
       this.loadData()
     },
     methods: {
@@ -62,11 +85,40 @@
         store.commit('keepArticle', item)
         mpx.navigateTo({ url: '/pages/detail' })
       },
+      toEditor () {
+        store.commit('clearArticle')
+        mpx.navigateTo({ url: '/pages/editor' })
+      },
       onSearch () {
         this.page = 1
         this.finished = false
         this.list = []
         this.loadData()
+      },
+      onDelete (id, e) {
+        console.log(e)
+        if (e.detail !== 'right') return
+        Dialog.confirm({
+          title: '确认信息',
+          message: '确定删除该文章吗？',
+        }).then(() => {
+          if (this.deleting) return
+          this.deleting = true
+          remove(id).then(res => {
+            this.list = this.list.filter(l => l._id !== id)
+            this.deleting = false
+            mpx.showToast({
+              title: '删除成功',
+              duration: 1500,
+            })
+          }).catch((e) => {
+            this.deleting = false
+            mpx.showToast({
+              title: '删除失败',
+              duration: 1500,
+            })
+          })
+        }).catch(console.log)
       },
       loadData () {
         if (this.finished) return
@@ -82,12 +134,22 @@
           if (data.length < this.limit) {
             this.finished = true
           }
+          wx.stopPullDownRefresh()
         })
       },
     },
   })
 </script>
 <style lang="stylus" scoped>
+.cell-del
+  display flex
+  flex-direction column
+  justify-content center
+  width 65px
+  height 100%
+  text-align center
+  color #ffffff
+  background-color #f5222d
 .add-btn
   position fixed
   right 10px
@@ -106,11 +168,15 @@
 </style>
 <script type="application/json">
   {
+    "enablePullDownRefresh": true,
+    "onReachBottomDistance": 50,
     "usingComponents": {
       "van-cell": "@vant/weapp/cell/index",
       "van-cell-group": "@vant/weapp/cell-group/index",
       "van-search": "@vant/weapp/search/index",
       "van-icon": "@vant/weapp/icon/index",
+      "van-swipe-cell": "@vant/weapp/swipe-cell/index",
+      "van-dialog": "@vant/weapp/dialog/index",
       "van-loading": "@vant/weapp/loading/index"
     }
   }

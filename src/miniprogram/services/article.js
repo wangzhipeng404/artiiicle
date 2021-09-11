@@ -15,7 +15,7 @@ export function find ({ keyword, page = 1, limit = 10 }) {
     {
       tags: keyword,
     },
-  ]) : {}).skip((page - 1) * limit).limit(limit).get().then(res => {
+  ]) : {}).skip((page - 1) * limit).limit(limit).orderBy('_id', 'desc').get().then(res => {
     return res.data
   })
 }
@@ -59,7 +59,7 @@ export function remove (id) {
   if (!id) {
     throw new Error('缺少id')
   }
-  return db.collection('todos').doc(id).remove().then(res => {
+  return db.collection('article').doc(id).remove().then(res => {
     console.log(res)
   })
 }

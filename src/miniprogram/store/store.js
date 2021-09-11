@@ -8,6 +8,9 @@ const store = createStore({
     keepArticle (state, data) {
       state.article = data
     },
+    clearArticle (state) {
+      state.article = {}
+    },
   },
 })
 
