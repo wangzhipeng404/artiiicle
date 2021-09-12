@@ -25,9 +25,14 @@
               title="{{item.title}}"
               is-link
               catchtap="toDetail(item)"
-              label="{{item.tagStr}}"
-            />
-             <view 
+              use-label-slot
+            >
+              <view slot="label">
+                <view>{{item.tagStr}}</view>
+                <view>{{item.createTime}}</view>
+              </view>
+            </van-cell>
+            <view 
               slot="right"
               class="van-swipe-cell__right cell-del"
             >
@@ -55,6 +60,7 @@
   import { find, remove } from '../services/article'
   import store from '../store/store'
   import Dialog from '@vant/weapp/dist/dialog/dialog'
+  import dayjs from 'dayjs'
 
   createPage({
     data: {
@@ -129,7 +135,11 @@
           page: this.page,
           limit: this.limit,
         }).then(data => {
-          this.list = this.list.concat(data.map(d => ({ ...d, tagStr: d.tags.join('，') })))
+          this.list = this.list.concat(data.map(d => ({
+            ...d,
+            tagStr: d.tags.join('，'),
+            createTime: dayjs(d.createTime).format('YYYY-MM-DD HH:mm:ss'),
+          })))
           this.loading = false
           if (data.length < this.limit) {
             this.finished = true
