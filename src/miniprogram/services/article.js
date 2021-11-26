@@ -14,7 +14,7 @@ export function find ({ keyword, page = 1, limit = 10 }) {
     {
       tags: keyword,
     },
-  ]) : {}).skip((page - 1) * limit).limit(limit).orderBy('_id', 'desc').get().then(res => {
+  ]) : {}).skip((page - 1) * limit).limit(limit).orderBy('createTime', 'desc').get().then(res => {
     return res.data
   })
 }
